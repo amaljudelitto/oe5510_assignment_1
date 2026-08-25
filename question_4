@@ -1,0 +1,59 @@
+# 1. Set rank r based on the assignment parameters
+r = 10
+
+# 2. Construct W (Sigma * V^*) for both X and Y velocities
+Wx_full = Sx[:r, np.newaxis] * Vhx[:r, :]
+Wy_full = Sy[:r, np.newaxis] * Vhy[:r, :]
+
+# 3. Create W (columns 1 to m-1) and W' (columns 2 to m)
+Wx = Wx_full[:, :-1]
+Wx_prime = Wx_full[:, 1:]
+
+Wy = Wy_full[:, :-1]
+Wy_prime = Wy_full[:, 1:]
+
+# 4. Compute the pseudoinverse of W to solve for A (A = W' * W^+)
+Ax = Wx_prime @ np.linalg.pinv(Wx)
+Ay = Wy_prime @ np.linalg.pinv(Wy)
+
+# 5. Calculate regression errors for verification
+error_x = np.linalg.norm(Wx_prime - (Ax @ Wx), 'fro') ** 2
+error_y = np.linalg.norm(Wy_prime - (Ay @ Wy), 'fro') ** 2
+
+print("Linear Regression Errors:")
+print(f"X velocity squared Frobenius error: {error_x:.6e}")
+print(f"Y velocity squared Frobenius error: {error_y:.6e}")
+
+# 6. Compute eigenvalues of A
+eigenvalues_x = np.linalg.eigvals(Ax)
+eigenvalues_y = np.linalg.eigvals(Ay)
+
+spectral_radius_x = np.max(np.abs(eigenvalues_x))
+spectral_radius_y = np.max(np.abs(eigenvalues_y))
+
+print("\nSpectral Radii (Maximum absolute eigenvalue):")
+print(f"X velocity: {spectral_radius_x:.6f}")
+print(f"Y velocity: {spectral_radius_y:.6f}")
+
+# 7. Plot eigenvalues in the complex plane
+plt.figure(figsize=(8, 8))
+
+# Plot X and Y eigenvalues
+plt.scatter(eigenvalues_x.real, eigenvalues_x.imag, s=80, alpha=0.8, label='X velocity (Ax)')
+plt.scatter(eigenvalues_y.real, eigenvalues_y.imag, s=80, marker='s', alpha=0.8, label='Y velocity (Ay)')
+
+# Draw the unit circle for stability reference
+theta = np.linspace(0, 2 * np.pi, 200)
+plt.plot(np.cos(theta), np.sin(theta), linestyle='--', color='gray', label='Unit Circle (Stability Boundary)')
+
+# Format axes
+plt.axhline(0, color='black', linewidth=1)
+plt.axvline(0, color='black', linewidth=1)
+plt.xlabel("Real part")
+plt.ylabel("Imaginary part")
+plt.title(f"Eigenvalues of Dynamic Operator A ($r={r}$)")
+plt.grid(True, linestyle=':', alpha=0.7)
+plt.axis('equal')
+plt.legend()
+plt.tight_layout()
+plt.show()
