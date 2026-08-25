@@ -1,0 +1,90 @@
+
+import numpy as np
+import matplotlib.pyplot as plt
+from scipy.io import loadmat
+
+data = loadmat("CYLINDER_ALL.mat")
+
+# Extract X and Y velocity fields
+UALL = data["UALL"]
+VALL = data["VALL"]
+
+print("UALL shape:", UALL.shape)
+print("VALL shape:", VALL.shape)
+
+
+# UALL = X-direction velocity
+# VALL = Y-direction velocity
+
+Xvel = UALL
+Yvel = VALL
+
+# SVD FOR X VELOCITY FIELD
+
+Ux, Sx, Vhx = np.linalg.svd(
+    Xvel,
+    full_matrices=False
+)
+
+
+# COMPUTE SVD FOR Y VELOCITY FIELD
+
+
+Uy, Sy, Vhy = np.linalg.svd(
+    Yvel,
+    full_matrices=False
+)
+
+
+# PRINT SVD MATRIX DIMENSIONS
+
+print("\nX Velocity SVD:")
+print("U matrix shape:", Ux.shape)
+print("Singular values shape:", Sx.shape)
+print("Vh matrix shape:", Vhx.shape)
+
+print("\nY Velocity SVD:")
+print("U matrix shape:", Uy.shape)
+print("Singular values shape:", Sy.shape)
+print("Vh matrix shape:", Vhy.shape)
+
+
+# PLOT SINGULAR VALUE SPECTRUM
+
+plt.figure(figsize=(12, 5))
+
+
+# X velocity singular value spectrum
+plt.subplot(1, 2, 1)
+
+plt.semilogy(
+    np.arange(1, len(Sx) + 1),
+    Sx,
+    'o-',
+    markersize=3
+)
+
+plt.xlabel("Mode Number")
+plt.ylabel("Singular Value (Log Scale)")
+plt.title("Singular Value Spectrum - X Velocity")
+plt.grid(True)
+
+
+# Y velocity singular value spectrum
+plt.subplot(1, 2, 2)
+
+plt.semilogy(
+    np.arange(1, len(Sy) + 1),
+    Sy,
+    'o-',
+    markersize=3
+)
+
+plt.xlabel("Mode Number")
+plt.ylabel("Singular Value (Log Scale)")
+plt.title("Singular Value Spectrum - Y Velocity")
+plt.grid(True)
+
+
+plt.tight_layout()
+plt.show()
