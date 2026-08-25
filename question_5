@@ -1,41 +1,62 @@
-import numpy as np
-import matplotlib.pyplot as plt
 
-# Assuming variables U_r (truncated U), W (Sigma * V^*), A (linear regression matrix), 
-# and X_vel (original dataset) are already in your workspace from Questions 3 & 4.
-# r = 10 is fixed per the assignment.
+# 0. Define grid dimensions 
+n_rows = 199
+n_cols = 449
+r = 10 
 
-# Target snapshot for prediction (using k=89 as used in Question 3, or any random snapshot)
-k = 89 
+# 1. Choose a target snapshot to predict (e.g., index 100)
+target_index = 100 
 
-# 1. Isolate the initial state vector w_1 (0-th index in Python)
-w_1 = W[:, 0]
+# 2. Isolate the initial state vectors (w_1 corresponds to index 0)
+wx_0 = Wx_full[:, 0]
+wy_0 = Wy_full[:, 0]
 
-# 2. Advance the state using the dynamical system model A^(k-1)
-# np.linalg.matrix_power handles the exponentiation of the square matrix A
-A_power = np.linalg.matrix_power(A, k - 1)
-w_k_pred = A_power @ w_1
+# 3. Advance the state from time 0 to target_index using matrix exponentiation
+Ax_powered = np.linalg.matrix_power(Ax, target_index)
+Ay_powered = np.linalg.matrix_power(Ay, target_index)
 
-# 3. Reconstruct the full high-dimensional flow field
-# Taking the real part to handle negligible complex numerical artifacts from A
-x_k_pred_flat = np.real(U_r @ w_k_pred)
+wx_pred = Ax_powered @ wx_0
+wy_pred = Ay_powered @ wy_0
 
-# 4. Reshape to the 2D spatial grid (199x449)
-x_k_pred_2d = x_k_pred_flat.reshape((199, 449))
-x_k_true_2d = X_vel[:, k-1].reshape((199, 449))
+# 4. Reconstruct the spatial flow field from the predicted amplitudes
+X_pred_flat = np.real(Ux[:, :r] @ wx_pred)
+Y_pred_flat = np.real(Uy[:, :r] @ wy_pred)
 
-# 5. Plotting comparison
-fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+# 5. Extract the true fields for comparison
+X_true_flat = Xvel[:, target_index]
+Y_true_flat = Yvel[:, target_index]
 
-# True Flow Field
-im1 = axes[0].imshow(x_k_true_2d, cmap='RdBu', origin='lower', extent=[0, 449, 0, 199])
-axes[0].set_title(f'True $X_{{vel}}$ Field (Snapshot $k={k}$)')
-fig.colorbar(im1, ax=axes[0], fraction=0.046, pad=0.04)
+# 6. Reshape to the physical 2D grid
+X_pred_2d = X_pred_flat.reshape((n_rows, n_cols), order='F')
+X_true_2d = X_true_flat.reshape((n_rows, n_cols), order='F')
 
-# Predicted Flow Field
-im2 = axes[1].imshow(x_k_pred_2d, cmap='RdBu', origin='lower', extent=[0, 449, 0, 199])
-axes[1].set_title(f'Predicted $X_{{vel}}$ Field (Snapshot $k={k}$)')
-fig.colorbar(im2, ax=axes[1], fraction=0.046, pad=0.04)
+Y_pred_2d = Y_pred_flat.reshape((n_rows, n_cols), order='F')
+Y_true_2d = Y_true_flat.reshape((n_rows, n_cols), order='F')
+
+# 7. VISUALIZE PREDICTIONS (X VELOCITY)
+fig, axes = plt.subplots(2, 1, figsize=(12, 8))
+
+im1 = axes[0].imshow(X_true_2d, origin='lower', aspect='auto', cmap='RdBu')
+axes[0].set_title(f"True $X_{{vel}}$ (Snapshot {target_index})")
+fig.colorbar(im1, ax=axes[0])
+
+im2 = axes[1].imshow(X_pred_2d, origin='lower', aspect='auto', cmap='RdBu')
+axes[1].set_title(rf"Predicted $X_{{vel}}$ via $\mathbf{{A}}^{{{target_index}}}$")
+fig.colorbar(im2, ax=axes[1])
+
+plt.tight_layout()
+plt.show()
+
+# 8. VISUALIZE PREDICTIONS (Y VELOCITY)
+fig, axes = plt.subplots(2, 1, figsize=(12, 8))
+
+im3 = axes[0].imshow(Y_true_2d, origin='lower', aspect='auto', cmap='RdBu')
+axes[0].set_title(f"True $Y_{{vel}}$ (Snapshot {target_index})")
+fig.colorbar(im3, ax=axes[0])
+
+im4 = axes[1].imshow(Y_pred_2d, origin='lower', aspect='auto', cmap='RdBu')
+axes[1].set_title(rf"Predicted $Y_{{vel}}$ via $\mathbf{{A}}^{{{target_index}}}$")
+fig.colorbar(im4, ax=axes[1])
 
 plt.tight_layout()
 plt.show()
