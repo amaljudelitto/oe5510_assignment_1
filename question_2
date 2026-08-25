@@ -1,0 +1,338 @@
+
+
+# QUESTION 2
+# Dynamic Mode Decomposition of Flow Past a Cylinder
+# Truncated SVD and Flow Reconstruction
+
+
+# 1. LOAD DATASET
+
+print("Variables present in MAT file:")
+print([key for key in data.keys() if not key.startswith("__")])
+
+
+# 2. EXTRACT VELOCITY DATA
+
+Xvel = np.asarray(data["UALL"], dtype=float)
+Yvel = np.asarray(data["VALL"], dtype=float)
+
+print("\nOriginal data shapes:")
+print("UALL:", Xvel.shape)
+print("VALL:", Yvel.shape)
+
+
+
+# 3. COMPUTE ENERGY
+
+# Energy associated with each singular value:
+# E_i = sigma_i^2
+
+energy_x = Sx ** 2
+energy_y = Sy ** 2
+
+
+# Total energy
+
+total_energy_x = np.sum(energy_x)
+total_energy_y = np.sum(energy_y)
+
+
+# Cumulative energy
+
+cumulative_energy_x = (
+    np.cumsum(energy_x) /
+    total_energy_x
+)
+
+cumulative_energy_y = (
+    np.cumsum(energy_y) /
+    total_energy_y
+)
+
+
+# 4. FIND r FOR 90%, 99%, AND 99.9%
+
+def find_r(cumulative_energy, target):
+
+    return np.searchsorted(
+        cumulative_energy,
+        target
+    ) + 1
+
+
+r90_x = find_r(cumulative_energy_x, 0.90)
+r99_x = find_r(cumulative_energy_x, 0.99)
+r999_x = find_r(cumulative_energy_x, 0.999)
+
+r90_y = find_r(cumulative_energy_y, 0.90)
+r99_y = find_r(cumulative_energy_y, 0.99)
+r999_y = find_r(cumulative_energy_y, 0.999)
+
+
+# 5. PRINT ENERGY RESULTS
+
+
+print("\n" + "=" * 60)
+print("NUMBER OF MODES REQUIRED")
+print("=" * 60)
+
+print("\nX VELOCITY (UALL)")
+print("----------------------------")
+
+print(
+    f"90.0% energy  -> r = {r90_x}"
+)
+
+print(
+    f"99.0% energy  -> r = {r99_x}"
+)
+
+print(
+    f"99.9% energy  -> r = {r999_x}"
+)
+
+
+print("\nY VELOCITY (VALL)")
+print("----------------------------")
+
+print(
+    f"90.0% energy  -> r = {r90_y}"
+)
+
+print(
+    f"99.0% energy  -> r = {r99_y}"
+)
+
+print(
+    f"99.9% energy  -> r = {r999_y}"
+)
+
+
+# 6. PRINT ACTUAL ENERGY CAPTURED
+
+print("\n" + "=" * 60)
+print("ACTUAL CUMULATIVE ENERGY")
+print("=" * 60)
+
+print("\nX velocity:")
+
+for r in [r90_x, r99_x, r999_x]:
+
+    print(
+        f"r = {r:3d} : "
+        f"{cumulative_energy_x[r-1] * 100:.6f}%"
+    )
+
+
+print("\nY velocity:")
+
+for r in [r90_y, r99_y, r999_y]:
+
+    print(
+        f"r = {r:3d} : "
+        f"{cumulative_energy_y[r-1] * 100:.6f}%"
+    )
+
+
+# 7. PLOT SINGULAR VALUE SPECTRUM
+
+plt.figure(figsize=(10, 6))
+
+plt.semilogy(
+    np.arange(1, len(Sx) + 1),
+    Sx,
+    'o-',
+    markersize=4,
+    label='X velocity'
+)
+
+plt.semilogy(
+    np.arange(1, len(Sy) + 1),
+    Sy,
+    's-',
+    markersize=4,
+    label='Y velocity'
+)
+
+plt.xlabel("Mode number")
+plt.ylabel("Singular value")
+plt.title("Singular Value Spectrum")
+
+plt.grid(True)
+plt.legend()
+plt.tight_layout()
+
+plt.show()
+
+
+# 8. PLOT CUMULATIVE ENERGY
+
+plt.figure(figsize=(10, 6))
+
+modes = np.arange(1, len(Sx) + 1)
+
+plt.plot(
+    modes,
+    cumulative_energy_x * 100,
+    linewidth=2,
+    label='X velocity'
+)
+
+plt.plot(
+    modes,
+    cumulative_energy_y * 100,
+    linewidth=2,
+    label='Y velocity'
+)
+
+plt.axhline(
+    90,
+    linestyle='--',
+    label='90%'
+)
+
+plt.axhline(
+    99,
+    linestyle='--',
+    label='99%'
+)
+
+plt.axhline(
+    99.9,
+    linestyle='--',
+    label='99.9%'
+)
+
+plt.xlabel("Number of modes, r")
+plt.ylabel("Cumulative energy (%)")
+plt.title("Cumulative Energy vs Number of Modes")
+
+plt.ylim(0, 100.5)
+plt.grid(True)
+plt.legend()
+
+plt.tight_layout()
+plt.show()
+
+# 9. TRUNCATED SVD RECONSTRUCTION FUNCTION
+
+def reconstruct(U, S, Vh, r):
+
+    Ur = U[:, :r]
+    Sr = S[:r]
+    Vhr = Vh[:r, :]
+
+    # U_r Sigma_r V_r^*
+    reconstructed = (
+        Ur *
+        Sr[np.newaxis, :]
+    ) @ Vhr
+
+    return reconstructed
+
+# 10. CALCULATE RECONSTRUCTION ERRORS
+r_values_x = [r90_x, r99_x, r999_x]
+r_values_y = [r90_y, r99_y, r999_y]
+
+print("\n" + "=" * 60)
+print("RECONSTRUCTION ERRORS")
+print("=" * 60)
+
+# Store reconstructed matrices and errors to avoid recalculating later
+reconstructed_x, reconstructed_y = {}, {}
+errors_x, errors_y = [], []
+
+# X Velocity Errors
+for r in r_values_x:
+    Xr = reconstruct(Ux, Sx, Vhx, r)
+    reconstructed_x[r] = Xr
+    
+    error = np.linalg.norm(Xvel - Xr, 'fro') ** 2
+    errors_x.append(error)  # Save for plotting
+    
+    relative_error = error / total_energy_x
+    
+    print(f"\nX velocity, r = {r}")
+    print(f"Squared Frobenius error = {error:.6e}")
+    print(f"Relative squared error = {relative_error:.6%}")
+
+# Y Velocity Errors
+for r in r_values_y:
+    Yr = reconstruct(Uy, Sy, Vhy, r)
+    reconstructed_y[r] = Yr
+    
+    error = np.linalg.norm(Yvel - Yr, 'fro') ** 2
+    errors_y.append(error)  # Save for plotting
+    
+    relative_error = error / total_energy_y
+    
+    print(f"\nY velocity, r = {r}")
+    print(f"Squared Frobenius error = {error:.6e}")
+    print(f"Relative squared error = {relative_error:.6%}")
+
+
+# ------------------------------------------------------------
+# 11. RECONSTRUCTION ERROR PLOT
+# ------------------------------------------------------------
+plt.figure(figsize=(10, 6))
+plt.semilogy(r_values_x, errors_x, 'o-', linewidth=2, label='X velocity')
+plt.semilogy(r_values_y, errors_y, 's-', linewidth=2, label='Y velocity')
+plt.xlabel("Number of modes, r")
+plt.ylabel("Squared Frobenius error")
+plt.title("Reconstruction Error")
+plt.grid(True)
+plt.legend()
+plt.tight_layout()
+plt.show()
+
+
+# ------------------------------------------------------------
+# 12. FUNCTION TO PLOT A FLOW FIELD
+# ------------------------------------------------------------
+def plot_flow_snapshot(matrix, snapshot, title, n_rows=199, n_cols=449):
+    # CRITICAL FIX: order='F' ensures the MATLAB data reshapes correctly
+    field = matrix[:, snapshot].reshape((n_rows, n_cols), order='F')
+
+    plt.figure(figsize=(12, 5))
+    # Added a diverging colormap for better visual contrast of velocity
+    plt.imshow(field, origin='lower', aspect='auto', cmap='RdBu') 
+    plt.colorbar(label='Velocity')
+    plt.xlabel("x")
+    plt.ylabel("y")
+    plt.title(title)
+    plt.tight_layout()
+    plt.show()
+
+
+# ------------------------------------------------------------
+# 13. PLOT SNAPSHOTS (True vs Reconstructed)
+# ------------------------------------------------------------
+snapshot = 0  # Choose snapshot between 0 and 150
+
+# Plot X Velocity Comparisons
+plot_flow_snapshot(Xvel, snapshot, "True X Velocity")
+for r in r_values_x:
+    plot_flow_snapshot(reconstructed_x[r], snapshot, f"Reconstructed X Velocity - r = {r}")
+
+# Plot Y Velocity Comparisons
+plot_flow_snapshot(Yvel, snapshot, "True Y Velocity")
+for r in r_values_y:
+    plot_flow_snapshot(reconstructed_y[r], snapshot, f"Reconstructed Y Velocity - r = {r}")
+
+
+# ------------------------------------------------------------
+# 14. FINAL SUMMARY TABLE
+# ------------------------------------------------------------
+print("\n" + "=" * 60)
+print("FINAL SUMMARY")
+print("=" * 60)
+
+print("\nX velocity:")
+print(f"90%   -> r = {r90_x}")
+print(f"99%   -> r = {r99_x}")
+print(f"99.9% -> r = {r999_x}")
+
+print("\nY velocity:")
+print(f"90%   -> r = {r90_y}")
+print(f"99%   -> r = {r99_y}")
+print(f"99.9% -> r = {r999_y}")
