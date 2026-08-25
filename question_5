@@ -1,0 +1,41 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+# Assuming variables U_r (truncated U), W (Sigma * V^*), A (linear regression matrix), 
+# and X_vel (original dataset) are already in your workspace from Questions 3 & 4.
+# r = 10 is fixed per the assignment.
+
+# Target snapshot for prediction (using k=89 as used in Question 3, or any random snapshot)
+k = 89 
+
+# 1. Isolate the initial state vector w_1 (0-th index in Python)
+w_1 = W[:, 0]
+
+# 2. Advance the state using the dynamical system model A^(k-1)
+# np.linalg.matrix_power handles the exponentiation of the square matrix A
+A_power = np.linalg.matrix_power(A, k - 1)
+w_k_pred = A_power @ w_1
+
+# 3. Reconstruct the full high-dimensional flow field
+# Taking the real part to handle negligible complex numerical artifacts from A
+x_k_pred_flat = np.real(U_r @ w_k_pred)
+
+# 4. Reshape to the 2D spatial grid (199x449)
+x_k_pred_2d = x_k_pred_flat.reshape((199, 449))
+x_k_true_2d = X_vel[:, k-1].reshape((199, 449))
+
+# 5. Plotting comparison
+fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+
+# True Flow Field
+im1 = axes[0].imshow(x_k_true_2d, cmap='RdBu', origin='lower', extent=[0, 449, 0, 199])
+axes[0].set_title(f'True $X_{{vel}}$ Field (Snapshot $k={k}$)')
+fig.colorbar(im1, ax=axes[0], fraction=0.046, pad=0.04)
+
+# Predicted Flow Field
+im2 = axes[1].imshow(x_k_pred_2d, cmap='RdBu', origin='lower', extent=[0, 449, 0, 199])
+axes[1].set_title(f'Predicted $X_{{vel}}$ Field (Snapshot $k={k}$)')
+fig.colorbar(im2, ax=axes[1], fraction=0.046, pad=0.04)
+
+plt.tight_layout()
+plt.show()
