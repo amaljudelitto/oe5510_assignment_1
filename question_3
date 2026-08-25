@@ -1,1 +1,50 @@
+import numpy as np
+import matplotlib.pyplot as plt
 
+# Assuming X_vel is already loaded as a 2D numpy array of shape (199*449, 151)
+# rows = 199 * 449, columns = 151 (time snapshots)
+
+# 1. Compute the Full SVD
+# full_matrices=False is used for the "economy" SVD, which is much faster
+U, S, Vt = np.linalg.svd(X_vel, full_matrices=False)
+
+# 2. Truncate to r = 10 modes
+r = 10
+U_r = U[:, :r]
+S_r = np.diag(S[:r])
+Vt_r = Vt[:r, :] # Vt is already the conjugate transpose V^*
+
+# 3. Compute W = \tilde{\Sigma} V^*
+W = S_r @ Vt_r
+
+# 4. Isolate the k-th snapshot
+# Python is 0-indexed, so the 89th snapshot is at index 88
+k_idx = 88 
+
+# Extract the true snapshot and the corresponding amplitude vector w_k
+x_k_true = X_vel[:, k_idx]
+w_k = W[:, k_idx]
+
+# 5. Compute the mixture of the first 10 eigenflows (U_r * w_k)
+x_k_recon_flat = U_r @ w_k
+
+# 6. Reshape vectors back to the 2D spatial grid
+# The prompt specifies 199 rows and 449 columns
+x_k_true_2d = x_k_true.reshape((199, 449))
+x_k_recon_2d = x_k_recon_flat.reshape((199, 449))
+
+# 7. Visualize the comparison
+fig, axes = plt.subplots(1, 2, figsize=(12, 5))
+
+# True k-th snapshot
+im1 = axes[0].imshow(x_k_true_2d, cmap='RdBu', origin='lower', extent=[0, 449, 0, 199])
+axes[0].set_title('True $X_{vel}$ Field (Snapshot $k=89$)')
+fig.colorbar(im1, ax=axes[0], fraction=0.046, pad=0.04)
+
+# Reconstructed k-th snapshot (Rank-10)
+im2 = axes[1].imshow(x_k_recon_2d, cmap='RdBu', origin='lower', extent=[0, 449, 0, 199])
+axes[1].set_title(f'Reconstructed with $U w_{{89}}$ ($r={r}$)')
+fig.colorbar(im2, ax=axes[1], fraction=0.046, pad=0.04)
+
+plt.tight_layout()
+plt.show()
