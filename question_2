@@ -72,12 +72,9 @@ r999_y = find_r(cumulative_energy_y, 0.999)
 # 5. PRINT ENERGY RESULTS
 
 
-print("\n" + "=" * 60)
 print("NUMBER OF MODES REQUIRED")
-print("=" * 60)
 
 print("\nX VELOCITY (UALL)")
-print("----------------------------")
 
 print(
     f"90.0% energy  -> r = {r90_x}"
@@ -93,7 +90,6 @@ print(
 
 
 print("\nY VELOCITY (VALL)")
-print("----------------------------")
 
 print(
     f"90.0% energy  -> r = {r90_y}"
@@ -110,9 +106,7 @@ print(
 
 # 6. PRINT ACTUAL ENERGY CAPTURED
 
-print("\n" + "=" * 60)
 print("ACTUAL CUMULATIVE ENERGY")
-print("=" * 60)
 
 print("\nX velocity:")
 
@@ -234,9 +228,7 @@ def reconstruct(U, S, Vh, r):
 r_values_x = [r90_x, r99_x, r999_x]
 r_values_y = [r90_y, r99_y, r999_y]
 
-print("\n" + "=" * 60)
 print("RECONSTRUCTION ERRORS")
-print("=" * 60)
 
 # Store reconstructed matrices and errors to avoid recalculating later
 reconstructed_x, reconstructed_y = {}, {}
@@ -246,12 +238,12 @@ errors_x, errors_y = [], []
 for r in r_values_x:
     Xr = reconstruct(Ux, Sx, Vhx, r)
     reconstructed_x[r] = Xr
-    
+
     error = np.linalg.norm(Xvel - Xr, 'fro') ** 2
     errors_x.append(error)  # Save for plotting
-    
+
     relative_error = error / total_energy_x
-    
+
     print(f"\nX velocity, r = {r}")
     print(f"Squared Frobenius error = {error:.6e}")
     print(f"Relative squared error = {relative_error:.6%}")
@@ -260,20 +252,18 @@ for r in r_values_x:
 for r in r_values_y:
     Yr = reconstruct(Uy, Sy, Vhy, r)
     reconstructed_y[r] = Yr
-    
+
     error = np.linalg.norm(Yvel - Yr, 'fro') ** 2
     errors_y.append(error)  # Save for plotting
-    
+
     relative_error = error / total_energy_y
-    
+
     print(f"\nY velocity, r = {r}")
     print(f"Squared Frobenius error = {error:.6e}")
     print(f"Relative squared error = {relative_error:.6%}")
 
 
-# ------------------------------------------------------------
 # 11. RECONSTRUCTION ERROR PLOT
-# ------------------------------------------------------------
 plt.figure(figsize=(10, 6))
 plt.semilogy(r_values_x, errors_x, 'o-', linewidth=2, label='X velocity')
 plt.semilogy(r_values_y, errors_y, 's-', linewidth=2, label='Y velocity')
@@ -286,16 +276,14 @@ plt.tight_layout()
 plt.show()
 
 
-# ------------------------------------------------------------
 # 12. FUNCTION TO PLOT A FLOW FIELD
-# ------------------------------------------------------------
 def plot_flow_snapshot(matrix, snapshot, title, n_rows=199, n_cols=449):
     # CRITICAL FIX: order='F' ensures the MATLAB data reshapes correctly
     field = matrix[:, snapshot].reshape((n_rows, n_cols), order='F')
 
     plt.figure(figsize=(12, 5))
     # Added a diverging colormap for better visual contrast of velocity
-    plt.imshow(field, origin='lower', aspect='auto', cmap='RdBu') 
+    plt.imshow(field, origin='lower', aspect='auto', cmap='RdBu')
     plt.colorbar(label='Velocity')
     plt.xlabel("x")
     plt.ylabel("y")
@@ -304,9 +292,9 @@ def plot_flow_snapshot(matrix, snapshot, title, n_rows=199, n_cols=449):
     plt.show()
 
 
-# ------------------------------------------------------------
+
 # 13. PLOT SNAPSHOTS (True vs Reconstructed)
-# ------------------------------------------------------------
+
 snapshot = 0  # Choose snapshot between 0 and 150
 
 # Plot X Velocity Comparisons
@@ -320,12 +308,10 @@ for r in r_values_y:
     plot_flow_snapshot(reconstructed_y[r], snapshot, f"Reconstructed Y Velocity - r = {r}")
 
 
-# ------------------------------------------------------------
+
 # 14. FINAL SUMMARY TABLE
-# ------------------------------------------------------------
-print("\n" + "=" * 60)
+
 print("FINAL SUMMARY")
-print("=" * 60)
 
 print("\nX velocity:")
 print(f"90%   -> r = {r90_x}")
