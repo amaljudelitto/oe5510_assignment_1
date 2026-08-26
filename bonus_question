@@ -271,7 +271,7 @@ fig, axes = plt.subplots(
 im1 = axes[0].imshow(
     X_true_2d,
     origin='lower',
-    aspect='auto',
+    aspect='equal',
     cmap='RdBu'
 )
 
@@ -285,7 +285,7 @@ fig.colorbar(im1, ax=axes[0])
 im2 = axes[1].imshow(
     X_best_2d,
     origin='lower',
-    aspect='auto',
+    aspect='equal',
     cmap='RdBu'
 )
 
@@ -299,7 +299,7 @@ fig.colorbar(im2, ax=axes[1])
 im3 = axes[2].imshow(
     X_large_2d,
     origin='lower',
-    aspect='auto',
+    aspect='equal',
     cmap='RdBu'
 )
 
