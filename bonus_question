@@ -1,1 +1,313 @@
+# BONUS QUESTION
+# Effect of different numbers of retained modes on prediction
 
+# Test different values of m (number of retained SVD modes)
+m_values = [2, 3, 5, 10, 15, 20, 30, 40, 50]
+
+# Choose a future snapshot to predict
+target_index = 100
+
+prediction_errors_x = []
+prediction_errors_y = []
+
+# FUNCTION TO BUILD THE DYNAMICAL MODEL FOR A GIVEN m
+
+def compute_prediction(U, S, Vh, data_matrix, m, target_index):
+
+    # 1. Construct W = Sigma_m V_m^*
+    W_full = S[:m, np.newaxis] * Vh[:m, :]
+
+    # 2. Construct W and W'
+    W = W_full[:, :-1]
+    W_prime = W_full[:, 1:]
+
+    # 3. Compute best-fit dynamical matrix A
+    A = W_prime @ np.linalg.pinv(W)
+
+    # 4. Initial state
+    w0 = W_full[:, 0]
+
+    # 5. Predict target snapshot
+    A_power = np.linalg.matrix_power(A, target_index)
+
+    w_pred = A_power @ w0
+
+    # 6. Reconstruct predicted flow field
+    predicted_field = np.real(U[:, :m] @ w_pred)
+
+    # 7. True flow field
+    true_field = data_matrix[:, target_index]
+
+    # 8. Relative prediction error
+    error = (
+        np.linalg.norm(
+            true_field - predicted_field
+        ) ** 2
+        /
+        np.linalg.norm(
+            true_field
+        ) ** 2
+    )
+
+    # 9. Eigenvalues for stability analysis
+    eigenvalues = np.linalg.eigvals(A)
+    spectral_radius = np.max(np.abs(eigenvalues))
+
+    return predicted_field, error, spectral_radius, A
+
+
+# TEST DIFFERENT VALUES OF m
+
+print("BONUS: EFFECT OF NUMBER OF MODES ON PREDICTION")
+
+spectral_radii_x = []
+spectral_radii_y = []
+
+predicted_fields_x = {}
+predicted_fields_y = {}
+
+for m in m_values:
+
+    # X velocity
+    X_pred, error_x, radius_x, A_test_x = compute_prediction(
+        Ux,
+        Sx,
+        Vhx,
+        Xvel,
+        m,
+        target_index
+    )
+
+    # Y velocity
+    Y_pred, error_y, radius_y, A_test_y = compute_prediction(
+        Uy,
+        Sy,
+        Vhy,
+        Yvel,
+        m,
+        target_index
+    )
+
+    # Store results
+    prediction_errors_x.append(error_x)
+    prediction_errors_y.append(error_y)
+
+    spectral_radii_x.append(radius_x)
+    spectral_radii_y.append(radius_y)
+
+    predicted_fields_x[m] = X_pred
+    predicted_fields_y[m] = Y_pred
+
+    print(f"\nm = {m}")
+    print(
+        f"X velocity relative prediction error = "
+        f"{error_x * 100:.4f}%"
+    )
+    print(
+        f"Y velocity relative prediction error = "
+        f"{error_y * 100:.4f}%"
+    )
+    print(
+        f"X spectral radius = {radius_x:.6f}"
+    )
+    print(
+        f"Y spectral radius = {radius_y:.6f}"
+    )
+
+
+# PLOT 1: PREDICTION ERROR VS NUMBER OF MODES
+
+plt.figure(figsize=(10, 6))
+
+plt.semilogy(
+    m_values,
+    prediction_errors_x,
+    'o-',
+    linewidth=2,
+    markersize=7,
+    label='X velocity'
+)
+
+plt.semilogy(
+    m_values,
+    prediction_errors_y,
+    's-',
+    linewidth=2,
+    markersize=7,
+    label='Y velocity'
+)
+
+plt.xlabel("Number of retained modes, m")
+plt.ylabel("Relative prediction error")
+plt.title(
+    f"Effect of Number of Modes on Prediction "
+    f"(Snapshot {target_index})"
+)
+
+plt.grid(True)
+plt.legend()
+plt.tight_layout()
+plt.show()
+
+
+# PLOT 2: SPECTRAL RADIUS VS NUMBER OF MODES
+
+plt.figure(figsize=(10, 6))
+
+plt.plot(
+    m_values,
+    spectral_radii_x,
+    'o-',
+    linewidth=2,
+    markersize=7,
+    label='X velocity'
+)
+
+plt.plot(
+    m_values,
+    spectral_radii_y,
+    's-',
+    linewidth=2,
+    markersize=7,
+    label='Y velocity'
+)
+
+# Stability boundary
+plt.axhline(
+    1.0,
+    linestyle='--',
+    linewidth=2,
+    label='Stability boundary'
+)
+
+plt.xlabel("Number of retained modes, m")
+plt.ylabel("Spectral radius")
+plt.title("Spectral Radius of Dynamic Matrix vs Number of Modes")
+
+plt.grid(True)
+plt.legend()
+plt.tight_layout()
+plt.show()
+
+
+# FIND THE BEST m AND POSSIBLE DEGRADATION POINT
+
+best_m_x = m_values[np.argmin(prediction_errors_x)]
+best_m_y = m_values[np.argmin(prediction_errors_y)]
+
+print("BONUS SUMMARY")
+
+print(f"\nBest m for X velocity = {best_m_x}")
+print(f"Minimum X prediction error = "
+      f"{min(prediction_errors_x) * 100:.4f}%")
+
+print(f"\nBest m for Y velocity = {best_m_y}")
+print(f"Minimum Y prediction error = "
+      f"{min(prediction_errors_y) * 100:.4f}%")
+
+
+# Find approximate point where error starts increasing
+
+for i in range(1, len(m_values)):
+
+    if (
+        prediction_errors_x[i] >
+        prediction_errors_x[i - 1]
+    ):
+
+        print(
+            f"\nX velocity prediction begins degrading "
+            f"approximately after m = {m_values[i - 1]}"
+        )
+
+        break
+
+
+for i in range(1, len(m_values)):
+
+    if (
+        prediction_errors_y[i] >
+        prediction_errors_y[i - 1]
+    ):
+
+        print(
+            f"Y velocity prediction begins degrading "
+            f"approximately after m = {m_values[i - 1]}"
+        )
+
+        break
+
+
+# VISUALIZE BEST AND HIGH-m PREDICTIONS
+
+m_best = best_m_x
+m_large = m_values[-1]
+
+# True X velocity field
+X_true_2d = Xvel[:, target_index].reshape(
+    (n_rows, n_cols),
+    order='F'
+)
+
+# Best prediction
+X_best_2d = predicted_fields_x[m_best].reshape(
+    (n_rows, n_cols),
+    order='F'
+)
+
+# Large-m prediction
+X_large_2d = predicted_fields_x[m_large].reshape(
+    (n_rows, n_cols),
+    order='F'
+)
+
+
+fig, axes = plt.subplots(
+    3,
+    1,
+    figsize=(12, 10)
+)
+
+im1 = axes[0].imshow(
+    X_true_2d,
+    origin='lower',
+    aspect='auto',
+    cmap='RdBu'
+)
+
+axes[0].set_title(
+    f"True X Velocity - Snapshot {target_index}"
+)
+
+fig.colorbar(im1, ax=axes[0])
+
+
+im2 = axes[1].imshow(
+    X_best_2d,
+    origin='lower',
+    aspect='auto',
+    cmap='RdBu'
+)
+
+axes[1].set_title(
+    f"Predicted X Velocity - Best m = {m_best}"
+)
+
+fig.colorbar(im2, ax=axes[1])
+
+
+im3 = axes[2].imshow(
+    X_large_2d,
+    origin='lower',
+    aspect='auto',
+    cmap='RdBu'
+)
+
+axes[2].set_title(
+    f"Predicted X Velocity - Large m = {m_large}"
+)
+
+fig.colorbar(im3, ax=axes[2])
+
+plt.tight_layout()
+plt.show()
