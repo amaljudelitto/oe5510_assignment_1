@@ -1,8 +1,7 @@
 
-# 0. Define grid dimensions
 r = 10
 
-# 1. Choose a target snapshot to predict (e.g., index 100)
+# 1. Choosing a target snapshot to predict
 target_index = 100
 
 # 2. Isolate the initial state vectors (w_1 corresponds to index 0)
@@ -36,7 +35,6 @@ Y_true_2d = Y_true_flat.reshape((n_rows, n_cols), order='F')
 # Slightly increased height to 10 to accommodate the equal aspect ratio
 fig, axes = plt.subplots(2, 1, figsize=(12, 10))
 
-# CRITICAL FIX: Changed aspect='auto' to aspect='equal'
 im1 = axes[0].imshow(X_true_2d, origin='lower', aspect='equal', cmap='RdBu')
 axes[0].set_title(f"True $X_{{vel}}$ (Snapshot {target_index})")
 fig.colorbar(im1, ax=axes[0])
@@ -53,7 +51,6 @@ plt.show()
 
 fig, axes = plt.subplots(2, 1, figsize=(12, 10))
 
-# CRITICAL FIX: Changed aspect='auto' to aspect='equal'
 im3 = axes[0].imshow(Y_true_2d, origin='lower', aspect='equal', cmap='RdBu')
 axes[0].set_title(f"True $Y_{{vel}}$ (Snapshot {target_index})")
 fig.colorbar(im3, ax=axes[0])
