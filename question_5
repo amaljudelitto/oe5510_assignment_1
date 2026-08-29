@@ -1,5 +1,7 @@
 
 r = 10
+n_rows=199
+n_cols=499
 
 # 1. Choosing a target snapshot to predict
 target_index = 100
