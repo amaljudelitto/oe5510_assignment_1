@@ -34,7 +34,6 @@ Y_true_2d = Y_true_flat.reshape((n_rows, n_cols), order='F')
 
 # 7. VISUALIZE PREDICTIONS (X VELOCITY)
 
-# Slightly increased height to 10 to accommodate the equal aspect ratio
 fig, axes = plt.subplots(2, 1, figsize=(12, 10))
 
 im1 = axes[0].imshow(X_true_2d, origin='lower', aspect='equal', cmap='RdBu')
