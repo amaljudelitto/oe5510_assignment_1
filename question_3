@@ -2,9 +2,9 @@
 r = 10
 U_r = Ux[:, :r]
 S_r = np.diag(Sx[:r])
-Vt_r = Vhx[:r, :] # Vt is already the conjugate transpose V^*
+Vt_r = Vhx[:r, :] # Vt is already the conjugate transpose V*
 
-# 3. Compute W = {Sigma} V^*
+# 3. Compute W = {Sigma} V*
 W = S_r @ Vt_r
 
 # 4. Isolate the k-th snapshot
