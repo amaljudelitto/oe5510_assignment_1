@@ -25,12 +25,12 @@ x_k_recon_2d = x_k_recon.reshape((199, 449), order='F')
 fig, axes = plt.subplots(1, 2, figsize=(12, 5))
 
 # True k-th snapshot
-im1 = axes[0].imshow(x_k_true_2d, cmap='RdBu', origin='lower', aspect='equal', extent=[0, 449, 0, 199])
+im1 = axes[0].imshow(x_k_true_2d, cmap='RdBu', origin='lower', extent=[0, 449, 0, 199])
 axes[0].set_title('True $X_{vel}$ Field (Snapshot $k=89$)')
 fig.colorbar(im1, ax=axes[0], fraction=0.046, pad=0.04)
 
 # Reconstructed k-th snapshot (Rank-10)
-im2 = axes[1].imshow(x_k_recon_2d, cmap='RdBu', origin='lower', aspect='equal', extent=[0, 449, 0, 199])
+im2 = axes[1].imshow(x_k_recon_2d, cmap='RdBu', origin='lower', extent=[0, 449, 0, 199])
 axes[1].set_title(f'Reconstructed with $U w_{{89}}$ ($r={r}$)')
 fig.colorbar(im2, ax=axes[1], fraction=0.046, pad=0.04)
 
