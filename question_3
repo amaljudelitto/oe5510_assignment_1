@@ -15,11 +15,11 @@ x_k_true = Xvel[:, k_idx]
 w_k = W[:, k_idx]
 
 # 5. Compute the mixture of the first 10 eigenflows (U_r * w_k)
-x_k_recon_flat = U_r @ w_k
+x_k_recon = U_r @ w_k
 
 # 6. Reshape vectors back to the 2D spatial grid
 x_k_true_2d = x_k_true.reshape((199, 449), order='F')
-x_k_recon_2d = x_k_recon_flat.reshape((199, 449), order='F')
+x_k_recon_2d = x_k_recon.reshape((199, 449), order='F')
 
 # 7. Visualize the comparison
 fig, axes = plt.subplots(1, 2, figsize=(12, 5))
